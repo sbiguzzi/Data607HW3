@@ -1,0 +1,159 @@
+---
+title: "Week 3 Assignment - Character manipulation & Data processing"
+author: "Stefano Biguzzi"
+date: "9/9/2020"
+output:
+  html_document:
+    includes:
+      in_header: header.html
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+    toc: true
+    toc_float: true
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = TRUE)
+library(tidyverse)
+library(RCurl)
+library(knitr)
+library(kableExtra)
+library(stringr)
+```
+
+# Part I:  
+**Using the 173 majors listed in fivethirtyeight.com’s [College Majors dataset](https://fivethirtyeight.com/features/the-economic-guide-to-picking-a-college-major/), provide code that identifies the majors that contain either "DATA" or "STATISTICS"**
+
+```{r rawdata, echo=TRUE, include=FALSE}
+rawdata <- getURL(
+    "https://raw.githubusercontent.com/fivethirtyeight/data/master/college-majors/majors-list.csv"
+    )
+major_data <- read.csv(text = rawdata)
+```
+```{r filteredata}
+filtered_data <-
+  major_data[
+    grepl("(DATA|STATISTICS)",major_data$Major),
+  ]
+```
+```{r table, echo=FALSE}
+rownames(filtered_data) <- NULL
+kable(
+  filtered_data,
+  caption = "Filtered Majors",
+  booktabs = T
+) %>% kable_styling(
+  latex_options = c("scale_down","hold_position")
+)
+```
+
+# Part II:  
+**Write code that transforms the data below:**  
+[1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+[5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+[9] "elderberry"   "lime"         "lychee"       "mulberry"    
+[13] "olive"        "salal berry"
+
+```{r createlist, echo=FALSE}
+fruit_list <- c(
+  "bell pepper",
+  "bilberry",
+  "blackberry",
+  "blood orange",
+  "blueberry",
+  "cantaloupe",
+  "chili pepper",
+  "cloudberry",
+  "elderberry",
+  "lime",
+  "lychee",
+  "mulberry",
+  "olive",
+  "salal berry"
+)
+```
+```{r printfruitlist, comment=NA}
+fruit_list
+```
+
+**Into a format like this:**  
+c("bell pepper", "bilberry", "blackberry", "blood orange", "blueberry", "cantaloupe", "chili pepper", "cloudberry", "elderberry", "lime", "lychee", "mulberry", "olive", "salal berry")
+
+```{r transformprint, comment=NA}
+dput(fruit_list)
+```
+
+# Part III:
+
+**Describe, in words, what these expressions will match:**  
+
+```{r addingtofruitlist, include=FALSE}
+fruit_list <- append(
+  fruit_list,
+  c("apple", "banana","appleelppa")
+)
+```
+* (.)\1\1
+  * This will present an error in two ways. First, there are no quotes around the pattern. Secondly, with only one '\\' Regex will read (.)\1\1 as (.) instead of (.)\1\1.
+```{r fruitlisterror, echo=FALSE, error=TRUE, comment=NA}
+str_view(fruit_list,(..)\1)
+```
+* "(.)(.)\\\\2\\\\1"
+  * Take one character, followed by another character, repeat the second character, then the first. This is equivalent to ABBA.
+```{r fruitlistabba, echo=FALSE}
+str_view(fruit_list,"(.)(.)\\2\\1")
+```
+* (..)\1
+  * This will also give you an error as it is not in quotes. Additionally, to get the regex right it should be \\1 and not \1 as regex again will read it as (..) instead of (..)\\1.
+```{r fruitlisterror2, echo=FALSE, error=TRUE, comment=NA}
+str_view(fruit_list,(..)\1)
+```
+* "(.).\\\\1.\\\\1"
+  * This is looking for a character, then any other character, then at the same character again, then any other character, then the same character again. The format would be ABACA
+```{r fruitlistabaca, echo=FALSE}
+str_view(fruit_list,"(.).\\1.\\1")
+```
+* "(.)(.)(.).\*\\\\3\\\\2\\\\1"
+  * This will look at three characters then any number of other characters, followed by the three characters repeated backwards. This would show up as ABCDDDCBA
+```{r fruitlistabcdddcba, echo=FALSE}
+str_view(fruit_list,"(.)(.)(.).*\\3\\2\\1")
+```
+
+
+
+# Part IV:
+
+**Construct regular expressions to match words that:**  
+```{r appendfruit, echo=FALSE}
+fruit_list <- append(
+  fruit_list,
+  c(
+    "church",
+    "assassin",
+    "bookkeeper",
+    "eleven",
+    "starts"
+  )
+)
+```
+
+* Start and end with the same character.
+  * "^(.).\*\\\\1$"
+```{r abcda, echo=FALSE}
+str_view(fruit_list,"^(.).*\\1$")
+```
+* Contain a repeated pair of letters (e.g. "church" contains "ch" repeated twice.)
+  * "([A-Za-z][A-Za-z]).\*\\\\1"
+```{r abstuffab, echo=FALSE}
+str_view(fruit_list,"([A-Za-z][A-Za-z]).*\\1")
+```
+* Contain one letter repeated in at least three places (e.g. "eleven" contains three "e"s.)
+  * "([A-Za-z]).\*\\\\1.\*\\\\1"
+```{r 3-repeat, echo=FALSE}
+str_view(fruit_list,"([A-Za-z]).*\\1.*\\1")
+```
+* * *
